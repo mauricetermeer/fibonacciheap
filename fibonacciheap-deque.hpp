@@ -8,6 +8,7 @@
 #define _FIBONACCI_HEAP_
 
 #include <algorithm>
+#include <array>
 #include <deque>
 #include <functional>
 #include <iterator>
@@ -48,7 +49,9 @@ public:
 	};
 
 	fibonacci_heap()
-		: n_(0) { }
+		: n_(0) {
+		degrees_.fill(nullptr);
+	}
 
 	iterator top() const
 	{
@@ -67,6 +70,10 @@ public:
 			std::swap(roots_.front(), roots_.back());
 		}
 
+		if (degrees_[0] == nullptr) {
+			degrees_[0] = new_node;
+		}
+
 		++n_;
 	}
 
@@ -76,6 +83,11 @@ public:
 
 		std::swap(roots_.front(), roots_.back());
 		roots_.pop_back();
+
+		std::size_t degree = old_node->children.size();
+		if (degrees_[degree] == old_node) {
+			degrees_[degree] = nullptr;
+		}
 
 		std::for_each(
 			std::begin(old_node->children), std::end(old_node->children),
@@ -94,8 +106,6 @@ public:
 private:
 	void merge_roots()
 	{
-		std::vector<pointer> degrees;
-
 		for (std::size_t i = 0; i < roots_.size(); ++i) {
 			auto root = roots_[i];
 
@@ -104,14 +114,10 @@ private:
 			auto degree = root->children.size();
 
 			while (true) {
-				if (degrees.size() <= degree) {
-					degrees.resize(degree + 1);
-				}
-
-				auto k = degrees[degree];
+				auto k = degrees_[degree];
 
 				if (k == nullptr) {
-					degrees[degree] = root;
+					degrees_[degree] = root;
 					break;
 				} else if (k == root) {
 					break;
@@ -127,7 +133,7 @@ private:
 						other->parent = root;
 					}
 
-					degrees[degree] = nullptr;
+					degrees_[degree] = nullptr;
 					++degree;
 				}
 			}
@@ -135,7 +141,7 @@ private:
 
 		roots_.clear();
 
-		for (auto i = std::begin(degrees); i != std::end(degrees); ++i) {
+		for (auto i = std::begin(degrees_); i != std::end(degrees_); ++i) {
 			if (*i == nullptr) continue;
 			roots_.push_back(*i);
 
@@ -145,6 +151,7 @@ private:
 		}
 	}
 
+	std::array<pointer,sizeof(std::size_t) * 8> degrees_;
 	std::deque<pointer> roots_;
 	std::allocator<node> allocator_;
 	size_type n_;
