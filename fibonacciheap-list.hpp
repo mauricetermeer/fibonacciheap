@@ -8,6 +8,8 @@
 #define _FIBONACCI_HEAP_
 
 #include <algorithm>
+#include <array>
+#include <deque>
 #include <functional>
 #include <iterator>
 #include <list>
@@ -22,7 +24,7 @@ public:
 	struct node {
 		T element;
 		node* parent;
-		std::vector<node*> children;
+		std::list<node*> children;
 	};
 
 	typedef T value_type;
@@ -47,11 +49,13 @@ public:
 	};
 
 	fibonacci_heap()
-		: degrees_(1), n_(0) { }
+		: min_element_(roots_.end()), n_(0) {
+		degrees_.fill(nullptr);
+	}
 
 	iterator top() const
 	{
-		return iterator(roots_.front());
+		return iterator(*min_element_);
 	}
 
 	void insert(const_reference element)
@@ -60,19 +64,15 @@ public:
 		allocator_.construct(new_node);
 		new_node->element = element;
 		new_node->parent = nullptr;
+		roots_.push_back(new_node);
 
-		if (roots_.empty() || new_node->element < roots_.front()->element) {
-			roots_.push_front(new_node);
+		if (n_ == 0 || new_node->element < (*min_element_)->element
+		) {
+			min_element_ = --roots_.end();
+		}
 
-			if (degrees_[0] == typename std::list<pointer>::iterator()) {
-				degrees_[0] = roots_.begin();
-			}
-		} else {
-			roots_.push_back(new_node);
-
-			if (degrees_[0] == typename std::list<pointer>::iterator()) {
-				degrees_[0] = --roots_.end();
-			}
+		if (degrees_[0] == nullptr) {
+			degrees_[0] = new_node;
 		}
 
 		++n_;
@@ -80,28 +80,22 @@ public:
 
 	void pop()
 	{
-		pointer old_node = roots_.front();
+		pointer old_node = *min_element_;
+		roots_.erase(min_element_);
+		min_element_ = roots_.end();
+
 		std::size_t degree = old_node->children.size();
-		auto k = degrees_[degree];
-
-		if (k == roots_.begin()) {
-			degrees_[degree] = typename std::list<pointer>::iterator();
+		if (degrees_[degree] == old_node) {
+			degrees_[degree] = nullptr;
 		}
-
-		roots_.pop_front();
 
 		std::for_each(
 			std::begin(old_node->children), std::end(old_node->children),
 				[&](pointer p) {
-
-			if (roots_.empty() || p->element < roots_.front()->element) {
-				roots_.push_front(p);
-			} else {
-				roots_.push_back(p);
-			}
-
 			p->parent = nullptr;
 		});
+
+		roots_.splice(roots_.end(), old_node->children);
 
 		allocator_.deallocate(old_node, 1);
 
@@ -113,22 +107,19 @@ public:
 private:
 	void merge_roots()
 	{
-		std::vector<typename std::list<pointer>::iterator> to_erase;
+		auto i = roots_.begin();
 
-		for (auto i = std::begin(roots_); i != std::end(roots_); ++i) {
-			if ((*i)->parent != nullptr) continue;
+		while (i != roots_.end()) {
+			auto root = *i++;
 
-			auto root = i;
-			auto degree = (*root)->children.size();
+			if (root->parent != nullptr) continue;
+
+			auto degree = root->children.size();
 
 			while (true) {
-				if (degrees_.size() <= degree) {
-					degrees_.resize(degree + 1);
-				}
-
 				auto k = degrees_[degree];
 
-				if (k == typename std::list<pointer>::iterator()) {
+				if (k == nullptr) {
 					degrees_[degree] = root;
 					break;
 				} else if (k == root) {
@@ -136,32 +127,38 @@ private:
 				} else {
 					auto other = k;
 
-					if ((*other)->element < (*root)->element) {
-						(*other)->children.push_back(*root);
-						(*root)->parent = *other;
-						to_erase.push_back(root);
+					if (other->element < root->element) {
+						other->children.push_back(root);
+						root->parent = other;
 						root = other;
 					} else {
-						(*root)->children.push_back(*other);
-						(*other)->parent = *root;
-						to_erase.push_back(other);
+						root->children.push_back(other);
+						other->parent = root;
 					}
 
-					degrees_[degree] = typename std::list<pointer>::iterator();
+					degrees_[degree] = nullptr;
 					++degree;
 				}
 			}
 		}
 
-		using namespace std::placeholders;
-		std::for_each(std::begin(to_erase), std::end(to_erase),
-				[&](const typename std::list<pointer>::iterator i) {
-			roots_.erase(i);
-		});
+		roots_.clear();
+
+		for (auto j = std::begin(degrees_); j != std::end(degrees_); ++j) {
+			if (*j == nullptr) continue;
+			roots_.push_back(*j);
+
+			if (roots_.size() == 1 ||
+				(*j)->element < (*min_element_)->element
+			) {
+				min_element_ = --roots_.end();
+			}
+		}
 	}
 
-	std::vector<typename std::list<pointer>::iterator> degrees_;
+	std::array<pointer,sizeof(std::size_t) * 8> degrees_;
 	std::list<pointer> roots_;
+	typename std::list<pointer>::iterator min_element_;
 	std::allocator<node> allocator_;
 	size_type n_;
 };

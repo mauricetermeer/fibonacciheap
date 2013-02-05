@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "boost/heap/fibonacci_heap.hpp"
-#include "fibonacciheap-deque.hpp"
+#include "fibonacciheap-list.hpp"
 
 int main()
 {
@@ -15,6 +15,7 @@ int main()
 	auto generator = std::bind(distribution, std::mt19937());
 
 	const int k = 1000000;
+	const int k2 = k / 10;
 
 	std::vector<int> pool(k);
 	std::for_each(std::begin(pool), std::end(pool),
@@ -30,7 +31,7 @@ int main()
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 
-	for (int i = 0; i < k; ++i) {
+	for (int i = 0; i < k2; ++i) {
 		heap.pop();
 	}
 
@@ -52,7 +53,7 @@ int main()
 
 	t1 = std::chrono::high_resolution_clock::now();
 
-	for (int i = 0; i < k; ++i) {
+	for (int i = 0; i < k2; ++i) {
 		queue.pop();
 	}
 
@@ -72,7 +73,7 @@ int main()
 
 	t1 = std::chrono::high_resolution_clock::now();
 
-	for (int i = 0; i < k; ++i) {
+	for (int i = 0; i < k2; ++i) {
 		bheap.pop();
 	}
 
