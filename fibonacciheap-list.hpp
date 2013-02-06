@@ -9,13 +9,10 @@
 
 #include <algorithm>
 #include <array>
-#include <deque>
 #include <functional>
 #include <iterator>
 #include <list>
-#include <map>
 #include <utility>
-#include <vector>
 
 template<typename T>
 class fibonacci_heap
@@ -33,6 +30,7 @@ public:
 	typedef T& reference;
 	typedef const node* const_pointer;
 	typedef node* pointer;
+	typedef typename std::list<pointer>::iterator root_pointer;
 
 	struct iterator {
 		const_reference operator*() const {
@@ -50,7 +48,6 @@ public:
 
 	fibonacci_heap()
 		: min_element_(roots_.end()), n_(0) {
-		degrees_.fill(nullptr);
 	}
 
 	iterator top() const
@@ -71,23 +68,15 @@ public:
 			min_element_ = --roots_.end();
 		}
 
-		if (degrees_[0] == nullptr) {
-			degrees_[0] = new_node;
-		}
-
 		++n_;
 	}
 
 	void pop()
 	{
 		pointer old_node = *min_element_;
+
 		roots_.erase(min_element_);
 		min_element_ = roots_.end();
-
-		std::size_t degree = old_node->children.size();
-		if (degrees_[degree] == old_node) {
-			degrees_[degree] = nullptr;
-		}
 
 		std::for_each(
 			std::begin(old_node->children), std::end(old_node->children),
@@ -107,58 +96,54 @@ public:
 private:
 	void merge_roots()
 	{
+		auto invalid = roots_.end();
+		min_element_ = invalid;
+		degrees_.fill(invalid);
+
 		auto i = roots_.begin();
 
 		while (i != roots_.end()) {
-			auto root = *i++;
+			auto root = i++;
 
-			if (root->parent != nullptr) continue;
+			if ((*root)->parent != nullptr) continue;
 
-			auto degree = root->children.size();
+			auto degree = (*root)->children.size();
 
 			while (true) {
 				auto k = degrees_[degree];
 
-				if (k == nullptr) {
+				if (k == invalid) {
 					degrees_[degree] = root;
-					break;
-				} else if (k == root) {
 					break;
 				} else {
 					auto other = k;
 
-					if (other->element < root->element) {
-						other->children.push_back(root);
-						root->parent = other;
+					if ((*other)->element < (*root)->element) {
+						(*root)->parent = *other;
+						(*other)->children.splice(
+							(*other)->children.end(), roots_, root);
 						root = other;
 					} else {
-						root->children.push_back(other);
-						other->parent = root;
+						(*other)->parent = *root;
+						(*root)->children.splice(
+							(*root)->children.end(), roots_, other);
 					}
 
-					degrees_[degree] = nullptr;
-					++degree;
+					degrees_[degree++] = invalid;
 				}
 			}
-		}
 
-		roots_.clear();
-
-		for (auto j = std::begin(degrees_); j != std::end(degrees_); ++j) {
-			if (*j == nullptr) continue;
-			roots_.push_back(*j);
-
-			if (roots_.size() == 1 ||
-				(*j)->element < (*min_element_)->element
+			if (min_element_ == invalid ||
+				(*root)->element < (*min_element_)->element
 			) {
-				min_element_ = --roots_.end();
+				min_element_ = root;
 			}
 		}
 	}
 
-	std::array<pointer,sizeof(std::size_t) * 8> degrees_;
+	std::array<root_pointer, sizeof(std::size_t) * 8> degrees_;
 	std::list<pointer> roots_;
-	typename std::list<pointer>::iterator min_element_;
+	root_pointer min_element_;
 	std::allocator<node> allocator_;
 	size_type n_;
 };
