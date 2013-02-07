@@ -20,6 +20,7 @@ class fibonacci_heap
 public:
 	struct node {
 		T element;
+		bool marked;
 		node* parent;
 		std::list<node*> children;
 	};
@@ -41,6 +42,8 @@ public:
 			return p_->element;
 		}
 
+		iterator() : p_(nullptr) { }
+
 		iterator(pointer p) : p_(p) { }
 
 		pointer p_;
@@ -55,11 +58,12 @@ public:
 		return iterator(*min_element_);
 	}
 
-	void insert(const_reference element)
+	iterator insert(const_reference element)
 	{
 		pointer new_node = allocator_.allocate(1);
 		allocator_.construct(new_node);
 		new_node->element = element;
+		new_node->marked = false;
 		new_node->parent = nullptr;
 		roots_.push_back(new_node);
 
@@ -69,6 +73,8 @@ public:
 		}
 
 		++n_;
+
+		return iterator(new_node);
 	}
 
 	void pop()
@@ -81,6 +87,7 @@ public:
 		std::for_each(
 			std::begin(old_node->children), std::end(old_node->children),
 				[&](pointer p) {
+			p->marked = false;
 			p->parent = nullptr;
 		});
 
@@ -91,6 +98,34 @@ public:
 		merge_roots();
 
 		--n_;
+	}
+
+	void decrease_key(iterator it)
+	{
+		pointer p = it.p_;
+		pointer parent = p->parent;
+
+		if (parent == nullptr) return;
+		if (!(p->element < parent->element)) return;
+
+		for (;;) {
+			auto k = std::find(
+				parent->children.begin(),
+				parent->children.end(),
+				p);
+			roots_.splice(roots_.end(), parent->children, k);
+			p->marked = false;
+
+			p = parent;
+			parent = p->parent;
+
+			if (parent == nullptr) break;
+
+			if (!p->marked) {
+				p->marked = true;
+				break;
+			}
+		}
 	}
 
 private:

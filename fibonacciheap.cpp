@@ -14,7 +14,7 @@ int main()
 	std::uniform_int_distribution<> distribution;
 	auto generator = std::bind(distribution, std::mt19937());
 
-	const int k = 5000000;
+	const int k = 3000000;
 	const int k2 = k / 10;
 
 	std::vector<int> pool(k);
@@ -80,6 +80,30 @@ int main()
 	diff1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
 	std::cout << "boost::fibonacci_heap: " << diff0 << " / " << diff1 << std::endl;
+
+	std::cout << "---\n";
+
+	fibonacci_heap<int> fheap;
+	std::array<fibonacci_heap<int>::iterator,10> fheap_it;
+
+	for (int i = 0; i < 10; ++i) {
+		fheap_it[i] = heap.insert(2 * i);
+	}
+
+	for (int i = 0; i < 5; ++i) {
+		std::cout << *heap.top() << std::endl;
+		heap.pop();
+	}
+
+	*fheap_it[7] = 11;
+	fheap.decrease_key(fheap_it[7]);
+
+	std::cout << "--\n";
+
+	for (int i = 0; i < 5; ++i) {
+		std::cout << *heap.top() << std::endl;
+		heap.pop();
+	}
 
 	return 0;
 }
