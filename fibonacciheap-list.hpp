@@ -21,7 +21,7 @@ public:
 	struct node {
 		T element;
 		bool marked;
-		node* parent;
+		typename std::list<node*>::iterator parent;
 		std::list<node*> children;
 	};
 
@@ -35,27 +35,28 @@ public:
 
 	struct iterator {
 		const_reference operator*() const {
-			return p_->element;
+			return (*p_)->element;
 		}
 
 		reference operator*() {
-			return p_->element;
+			return (*p_)->element;
 		}
 
-		iterator() : p_(nullptr) { }
+		iterator() { }
 
-		iterator(pointer p) : p_(p) { }
+		iterator(root_pointer p) : p_(p) { }
 
-		pointer p_;
+		root_pointer p_;
 	};
 
 	fibonacci_heap()
-		: min_element_(roots_.end()), n_(0) {
+		: min_element_(roots_.begin()), n_(0) {
+		roots_.push_back(nullptr);
 	}
 
 	iterator top() const
 	{
-		return iterator(*min_element_);
+		return iterator(min_element_);
 	}
 
 	iterator insert(const_reference element)
@@ -64,7 +65,7 @@ public:
 		allocator_.construct(new_node);
 		new_node->element = element;
 		new_node->marked = false;
-		new_node->parent = nullptr;
+		new_node->parent = roots_.begin();
 		roots_.push_back(new_node);
 
 		if (n_ == 0 || new_node->element < (*min_element_)->element
@@ -74,7 +75,7 @@ public:
 
 		++n_;
 
-		return iterator(new_node);
+		return iterator(--roots_.end());
 	}
 
 	void pop()
@@ -88,7 +89,7 @@ public:
 			std::begin(old_node->children), std::end(old_node->children),
 				[&](pointer p) {
 			p->marked = false;
-			p->parent = nullptr;
+			p->parent = roots_.begin();
 		});
 
 		roots_.splice(roots_.end(), old_node->children);
@@ -102,27 +103,23 @@ public:
 
 	void decrease_key(iterator it)
 	{
-		pointer p = it.p_;
-		pointer parent = p->parent;
+		root_pointer p = it.p_;
+		root_pointer parent = (*p)->parent;
 
-		if (parent == nullptr) return;
-		if (!(p->element < parent->element)) return;
+		if (parent == roots_.begin()) return;
+		if (!((*p)->element < (*parent)->element)) return;
 
 		for (;;) {
-			auto k = std::find(
-				parent->children.begin(),
-				parent->children.end(),
-				p);
-			roots_.splice(roots_.end(), parent->children, k);
-			p->marked = false;
+			roots_.splice(roots_.end(), (*parent)->children, p);
+			(*p)->marked = false;
 
 			p = parent;
-			parent = p->parent;
+			parent = (*p)->parent;
 
-			if (parent == nullptr) break;
+			if (parent == roots_.begin()) break;
 
-			if (!p->marked) {
-				p->marked = true;
+			if (!(*p)->marked) {
+				(*p)->marked = true;
 				break;
 			}
 		}
@@ -131,44 +128,43 @@ public:
 private:
 	void merge_roots()
 	{
-		auto invalid = roots_.end();
-		min_element_ = invalid;
-		degrees_.fill(invalid);
+		min_element_ = roots_.begin();
+		degrees_.fill(roots_.begin());
 
-		auto i = roots_.begin();
+		auto i = ++roots_.begin();
 
 		while (i != roots_.end()) {
 			auto root = i++;
 
-			if ((*root)->parent != nullptr) continue;
+			if ((*root)->parent != roots_.begin()) continue;
 
 			auto degree = (*root)->children.size();
 
 			while (true) {
 				auto k = degrees_[degree];
 
-				if (k == invalid) {
+				if (k == roots_.begin()) {
 					degrees_[degree] = root;
 					break;
 				} else {
 					auto other = k;
 
 					if ((*other)->element < (*root)->element) {
-						(*root)->parent = *other;
+						(*root)->parent = other;
 						(*other)->children.splice(
 							(*other)->children.end(), roots_, root);
 						root = other;
 					} else {
-						(*other)->parent = *root;
+						(*other)->parent = root;
 						(*root)->children.splice(
 							(*root)->children.end(), roots_, other);
 					}
 
-					degrees_[degree++] = invalid;
+					degrees_[degree++] = roots_.begin();
 				}
 			}
 
-			if (min_element_ == invalid ||
+			if (min_element_ == roots_.begin() ||
 				(*root)->element < (*min_element_)->element
 			) {
 				min_element_ = root;
