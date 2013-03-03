@@ -6,8 +6,8 @@
 #include <random>
 #include <vector>
 
-#include "boost/heap/fibonacci_heap.hpp"
 #include "fibonacciheap-ptr.hpp"
+#include "boost/heap/fibonacci_heap.hpp"
 
 int main()
 {

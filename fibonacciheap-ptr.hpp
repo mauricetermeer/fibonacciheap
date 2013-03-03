@@ -7,12 +7,7 @@
 #ifndef _FIBONACCI_HEAP_
 #define _FIBONACCI_HEAP_
 
-#include <algorithm>
 #include <array>
-#include <functional>
-#include <iterator>
-#include <list>
-#include <utility>
 
 template<typename T>
 class fibonacci_heap
