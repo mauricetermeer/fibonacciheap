@@ -7,15 +7,15 @@
 #include <vector>
 
 #include "boost/heap/fibonacci_heap.hpp"
-#include "fibonacciheap-list.hpp"
+#include "fibonacciheap-ptr.hpp"
 
 int main()
 {
 	std::uniform_int_distribution<> distribution;
 	auto generator = std::bind(distribution, std::mt19937());
 
-	const int k = 3000000;
-	const int k2 = k / 10;
+	//const int k = 50, k2 = k;
+	const int k = 3000000, k2 = k / 10;
 
 	std::vector<int> pool(k);
 	std::for_each(std::begin(pool), std::end(pool),
