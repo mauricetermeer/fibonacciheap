@@ -2,6 +2,7 @@
  * Mutable Fibonacci Heap implementation
  * © 2013 Philips Healthcare
  * Author: Maurice Termeer
+ * Version 8 (2013-07-16)
  */
 
 #ifndef _FIBONACCI_HEAP_
@@ -60,8 +61,7 @@ public:
 
 	iterator insert(const_reference element)
 	{
-		pointer new_node = allocator_.allocate(1);
-		allocator_.construct(new_node);
+		pointer new_node = new node();
 		new_node->element = element;
 		new_node->marked = false;
 		new_node->parent = nullptr;
@@ -127,7 +127,7 @@ public:
 			}
 		}
 
-		allocator_.deallocate(min_element_, 1);
+		delete min_element_;
 		min_element_ = nullptr;
 
 		merge_roots();
@@ -300,7 +300,6 @@ private:
 	std::array<pointer, sizeof(std::size_t) * 8> degrees_;
 	pointer first_, last_;
 	pointer min_element_;
-	std::allocator<node> allocator_;
 	size_type n_;
 };
 
