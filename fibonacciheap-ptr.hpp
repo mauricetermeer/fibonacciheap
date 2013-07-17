@@ -2,13 +2,14 @@
  * Mutable Fibonacci Heap implementation
  * © 2013 Philips Healthcare
  * Author: Maurice Termeer
- * Version 8 (2013-07-16)
+ * Version 9 (2013-07-17)
  */
 
 #ifndef _FIBONACCI_HEAP_
 #define _FIBONACCI_HEAP_
 
 #include <array>
+#include <iostream>
 
 template<typename T>
 class fibonacci_heap
@@ -66,6 +67,8 @@ public:
 		new_node->marked = false;
 		new_node->parent = nullptr;
 		new_node->degree = 0;
+		new_node->first = nullptr;
+		new_node->last = nullptr;
 
 		if (first_ == nullptr) {
 			new_node->prev = nullptr;
