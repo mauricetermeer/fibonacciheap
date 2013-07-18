@@ -2,14 +2,13 @@
  * Mutable Fibonacci Heap implementation
  * © 2013 Philips Healthcare
  * Author: Maurice Termeer
- * Version 9 (2013-07-17)
+ * Version 10 (2013-07-18)
  */
 
 #ifndef _FIBONACCI_HEAP_
 #define _FIBONACCI_HEAP_
 
 #include <array>
-#include <iostream>
 
 template<typename T>
 class fibonacci_heap
@@ -49,6 +48,15 @@ public:
 
 	fibonacci_heap()
 		: first_(nullptr), last_(nullptr), min_element_(nullptr), n_(0) {
+	}
+
+	~fibonacci_heap()
+	{
+		for (pointer p = first_; p != nullptr;) {
+			pointer q = p;
+			p = p->next;
+			free_node(q);
+		}
 	}
 
 	std::size_t size() const {
@@ -293,11 +301,23 @@ private:
 			}
 
 			if (min_element_ == nullptr ||
+				min_element_->parent != nullptr ||
 				root->element < min_element_->element
 			) {
 				min_element_ = root;
 			}
 		}
+	}
+
+	void free_node(pointer n)
+	{
+		for (pointer p = n->first; p != nullptr;) {
+			pointer q = p;
+			p = p->next;
+			free_node(q);
+		}
+
+		delete n;
 	}
 
 	std::array<pointer, sizeof(std::size_t) * 8> degrees_;
