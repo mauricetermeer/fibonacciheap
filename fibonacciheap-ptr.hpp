@@ -1,8 +1,20 @@
 /**
  * Mutable Fibonacci Heap implementation
- * © 2013 Philips Healthcare
- * Author: Maurice Termeer
- * Version 10 (2013-07-18)
+ * Version 11 (2013-09-26)
+ *
+ * Copyright © 2013, Maurice Termeer
+ *
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #ifndef _FIBONACCI_HEAP_
@@ -39,7 +51,17 @@ public:
 			return p_->element;
 		}
 
-		iterator() { }
+		bool operator==(const std::nullptr_t q) const {
+			return p_ == q;
+		}
+
+		bool operator!=(const std::nullptr_t q) const {
+			return p_ != q;
+		}
+
+		iterator() : p_(nullptr) { }
+
+		iterator(std::nullptr_t p) : p_(p) { }
 
 		iterator(pointer p) : p_(p) { }
 
@@ -155,6 +177,24 @@ public:
 		if (!(p->element < parent->element)) return;
 
 		for (;;) {
+			if (p->prev != nullptr) {
+				p->prev->next = p->next;
+			}
+
+			if (p->next != nullptr) {
+				p->next->prev = p->prev;
+			}
+
+			if (parent->first == p) {
+				parent->first = p->next;
+			}
+
+			if (parent->last == p) {
+				parent->last = p->prev;
+			}
+
+			--parent->degree;
+
 			if (last_ == nullptr) {
 				p->prev = nullptr;
 				p->next = nullptr;

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <functional>
 #include <iostream>
@@ -7,14 +8,17 @@
 #include <vector>
 
 #include "fibonacciheap-ptr.hpp"
+
+//#define TEST_BOOST
+#ifdef TEST_BOOST
 #include "boost/heap/fibonacci_heap.hpp"
+#endif // TEST_BOOST
 
 int main()
 {
 	std::uniform_int_distribution<> distribution;
 	auto generator = std::bind(distribution, std::mt19937());
 
-	//const int k = 50, k2 = k;
 	const int k = 3000000, k2 = k / 10;
 
 	std::vector<int> pool(k);
@@ -61,6 +65,7 @@ int main()
 
 	std::cout << "fibonacci_heap: " << diff0 << " / " << diff1 << std::endl;
 
+#ifdef TEST_BOOST
 	boost::heap::fibonacci_heap<int> bheap;
 
 	t0 = std::chrono::high_resolution_clock::now();
@@ -80,30 +85,30 @@ int main()
 	diff1 = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
 
 	std::cout << "boost::fibonacci_heap: " << diff0 << " / " << diff1 << std::endl;
-
-	std::cout << "---\n";
+#endif // TEST_BOOST
 
 	fibonacci_heap<int> fheap;
 	std::array<fibonacci_heap<int>::iterator,10> fheap_it;
+	std::vector<int> output;
 
 	for (int i = 0; i < 10; ++i) {
 		fheap_it[i] = heap.insert(2 * i);
 	}
 
 	for (int i = 0; i < 5; ++i) {
-		std::cout << *heap.top() << std::endl;
+		output.push_back(*heap.top());
 		heap.pop();
 	}
 
 	*fheap_it[7] = 11;
 	fheap.decrease_key(fheap_it[7]);
 
-	std::cout << "--\n";
-
 	for (int i = 0; i < 5; ++i) {
-		std::cout << *heap.top() << std::endl;
+		output.push_back(*heap.top());
 		heap.pop();
 	}
+
+	assert(is_sorted(std::begin(output), std::end(output)));
 
 	return 0;
 }
