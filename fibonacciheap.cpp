@@ -21,6 +21,7 @@
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <queue>
 #include <random>
 #include <vector>
@@ -106,24 +107,30 @@ int main()
 #endif // TEST_BOOST
 
 	fibonacci_heap<int> fheap;
-	std::array<fibonacci_heap<int>::iterator,10> fheap_it;
+	std::vector<fibonacci_heap<int>::iterator> fheap_it(k);
 	std::vector<int> output;
 
-	for (int i = 0; i < 10; ++i) {
-		fheap_it[i] = heap.insert(2 * i);
+	for (int i = 0; i < k; ++i) {
+		fheap_it[i] = fheap.insert(generator());
 	}
 
-	for (int i = 0; i < 5; ++i) {
-		output.push_back(*heap.top());
-		heap.pop();
+	fheap.insert(std::numeric_limits<int>::lowest());
+	fheap.pop();
+
+	for (int i = 0; i < k2; ++i) {
+		int j = abs(generator()) % k;
+		auto& it = fheap_it[j];
+		int new_value = generator();
+		bool less = new_value < *it;
+		*it = new_value;
+
+		if (less) fheap.decrease_key(it); else fheap.increase_key(it);
 	}
 
-	*fheap_it[7] = 11;
-	fheap.decrease_key(fheap_it[7]);
-
-	for (int i = 0; i < 5; ++i) {
-		output.push_back(*heap.top());
-		heap.pop();
+	while (fheap.size() > 0) {
+		int element = *fheap.top();
+		output.push_back(element);
+		fheap.pop();
 	}
 
 	assert(is_sorted(std::begin(output), std::end(output)));

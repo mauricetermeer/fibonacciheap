@@ -209,6 +209,10 @@ public:
 			p->parent = nullptr;
 			p->marked = false;
 
+			if (p->element < min_element_->element) {
+				min_element_ = p;
+			}
+
 			p = parent;
 			parent = p->parent;
 
@@ -217,6 +221,58 @@ public:
 			if (!p->marked) {
 				p->marked = true;
 				break;
+			}
+		}
+	}
+
+	void increase_key(iterator it)
+	{
+		pointer p = it.p_;
+
+		bool violated = false;
+
+		for (pointer q = p->first; q != nullptr; q = q->next) {
+			if (q->element < p->element) {
+				violated = true;
+				break;
+			}
+		}
+
+		if (!violated) {
+			if (min_element_ == p) {
+				for (pointer q = first_; q != nullptr; q = q->next) {
+					if (q->element < min_element_->element) {
+						min_element_ = q;
+					}
+				}
+			}
+
+			return;
+		}
+
+		if (last_ == nullptr) {
+			first_ = p->first;
+			last_ = p->last;
+		} else {
+			p->first->prev = last_;
+			last_->next = p->first;
+			last_ = p->last;
+		}
+
+		for (pointer q = p->first; q != nullptr; q = q->next) {
+			q->parent = nullptr;
+			q->marked = false;
+		}
+
+		p->first = p->last = nullptr;
+		p->degree = 0;
+		p->marked = false;
+
+		if (min_element_ == p) {
+			for (pointer q = first_; q != nullptr; q = q->next) {
+				if (q->element < min_element_->element) {
+					min_element_ = q;
+				}
 			}
 		}
 	}

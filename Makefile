@@ -1,5 +1,5 @@
 CC=clang++
-CFLAGS=-c -Wall -std=c++11 -stdlib=libc++ -O3 -I/usr/local/Cellar/boost/1.52.0/include
+CFLAGS=-c -O3 -Wall -std=c++11 -stdlib=libc++ -I/usr/local/Cellar/boost/1.52.0/include
 LDFLAGS=-stdlib=libc++
 SRC=fibonacciheap.cpp
 OBJ=$(SRC:.cpp=.o)
